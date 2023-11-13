@@ -2,19 +2,18 @@ const {
   NOT_FOUND_ERROR_CODE,
   CLIENT_ERROR_CODE,
   SERVER_ERROR_CODE,
-} = require("../constants/constants");
+} = require('../constants/constants');
 
-const Card = require("../models/Card");
+const Card = require('../models/Card');
 
 const getCards = async (req, res) => {
   Card.find({})
-    .then((cards) => {
-      return res.send(cards);
+    .then((cards) => {res.send(cards);
     })
     .catch(() => {
       res
         .status(SERVER_ERROR_CODE)
-        .send({ message: "Произошла ошибка на сервере" });
+        .send({ message: 'Произошла ошибка на сервере' });
     });
 };
 
@@ -26,14 +25,14 @@ const createCard = async (req, res) => {
       res.send({ data: card });
     })
     .catch((error) => {
-      if (error.name === "ValidationError") {
+      if (error.name === 'ValidationError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: "Ошибка валидации полей" });
+          .send({ message: 'Ошибка валидации полей' });
       }
       return res
         .status(SERVER_ERROR_CODE)
-        .send({ message: "Произошла ошибка на сервере" });
+        .send({ message: 'Произошла ошибка на сервере' });
     });
 };
 
@@ -43,21 +42,18 @@ const deleteCard = async (req, res) => {
   Card.findByIdAndRemove(idCard)
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: "Карта не найдена" });
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карта не найдена' });
       } else {
         res.send({ data: card });
       }
     })
     .catch((error) => {
-      if (error.name === "CastError") {
+      if (error.name === 'CastError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: "Ошибка валидации полей" });
-      } else {
-        res
-          .status(SERVER_ERROR_CODE)
-          .send({ message: "Произошла ошибка на сервере" });
+          .send({ message: 'Ошибка валидации полей' });
       }
+      res.status(SERVER_ERROR_CODE).send({ message: 'Произошла ошибка на сервере' });
     });
 };
 
@@ -65,24 +61,24 @@ const likeCard = async (req, res) => {
   Card.findByIdAndUpdate(
     req.params.idCard,
     { $addToSet: { likes: req.user._id } },
-    { new: true }
+    { new: true },
   )
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: "Карта не найдена" });
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карта не найдена' });
       } else {
         res.send({ data: card });
       }
     })
     .catch((error) => {
-      if (error.name === "CastError") {
+      if (error.name === 'CastError') {
         res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: "Некорректный формат ID" });
+          .send({ message: 'Некорректный формат ID' });
       } else {
         res
           .status(SERVER_ERROR_CODE)
-          .send({ message: "Произошла ошибка на сервере" });
+          .send({ message: 'Произошла ошибка на сервере'});
       }
     });
 };
@@ -90,25 +86,25 @@ const likeCard = async (req, res) => {
 const dislikeCard = async (req, res) => {
   Card.findByIdAndUpdate(
     req.params.idCard,
-    { $pull: { likes: req.user._id } }, // убрать _id из массива
-    { new: true }
+    { $pull: { likes: req.user._id } },
+    { new: true },
   )
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: "Карта не найдена" });
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карта не найдена' });
       } else {
         res.send({ data: card });
       }
     })
     .catch((error) => {
-      if (error.name === "CastError") {
+      if (error.name === 'CastError') {
         res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: "Некорректный формат ID" });
+          .send({ message: 'Некорректный формат ID'});
       } else {
         res
           .status(SERVER_ERROR_CODE)
-          .send({ message: "Произошла ошибка на сервере" });
+          .send({ message: 'Произошла ошибка на сервере'});
       }
     });
 };
