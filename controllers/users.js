@@ -7,110 +7,130 @@ const {
 const User = require("../models/User");
 
 const getUsers = async (req, res) => {
-  console.log("getUsers");
-  try {
-    const users = await User.find({});
-    return res.send(users);
-  } catch (error) {
-    res.status(SERVER_ERROR_CODE).send({ message: error.message });
-  }
+  User.find({})
+    .then((users) => {
+      return res.send(users);
+    })
+    .catch((error) => {
+      res.status(SERVER_ERROR_CODE).send({ message: error.message });
+    });
 };
+
 const getUserById = async (req, res) => {
-  try {
-    const { idUser } = req.params; //забирает id из адремной строки '/:id'
-    const user = await User.findById(idUser); //пердаем айди в метод поиска по айди
-    if (!user) {
-      //проверка на наличие пользователя
-      throw new Error("NotFound");
-    }
-    res.send(user); //вернули пользователя
-  } catch (error) {
-    if (error.message === "NotFound") {
-      return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: "Пользователь по id не найден" });
-    }
-    if (error.name === "CastError") {
-      return res
-        .status(CLIENT_ERROR_CODE)
-        .send({ message: "Передан невалидный id" });
-    }
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: "Ошибка на стороне сервера" });
-  }
-};
-const createUser = async (req, res) => {
-  try {
-    console.log(req.body);
-    const newUser = await new User(req.body);
-    return res.status(201).send(await newUser.save());
-  } catch (error) {
-    if (error.name === "ValidationError") {
-      return res
-        .status(CLIENT_ERROR_CODE)
-        .send({ message: "Ошибка валидации полей" });
-    } else {
+  const { idUser } = req.params; // Забирает id из адресной строки '/:id'
+
+  return User.findById(idUser)
+    .then((user) => {
+      if (!user) {
+        throw new Error("NotFound");
+      }
+      res.send(user); // Вернули пользователя
+    })
+    .catch((error) => {
+      if (error.message === "NotFound") {
+        return res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: "Пользователь по id не найден" });
+      }
+      if (error.name === "CastError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Передан невалидный id" });
+      }
       return res
         .status(SERVER_ERROR_CODE)
         .send({ message: "Ошибка на стороне сервера" });
-    }
-  }
+    });
+};
+
+const createUser = async (req, res) => {
+  const newUser = new User(req.body);
+
+  return newUser
+    .save()
+    .then((savedUser) => {
+      return res.status(201).send(savedUser);
+    })
+    .catch((error) => {
+      if (error.name === "ValidationError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Ошибка валидации полей" });
+      } else {
+        return res
+          .status(SERVER_ERROR_CODE)
+          .send({ message: "Ошибка на стороне сервера" });
+      }
+    });
 };
 
 const patchUser = async (req, res) => {
-  try {
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { name: req.body.name, about: req.body.about },
-      { new: true, runValidators: true }
-    );
+  User.findByIdAndUpdate(
+    req.user._id,
+    { name: req.body.name, about: req.body.about },
+    { new: true, runValidators: true }
+  )
+    .then((updatedUser) => {
+      if (!updatedUser) {
+        return res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: "Пользователь по id не найден" });
+      }
+      res.send({ data: updatedUser });
+    })
 
-    if (!updatedUser) {
+    .catch((error) => {
+      if (error.name === "ValidationError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Ошибка валидации полей" });
+      }
+      if (error.name === "CastError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Передан невалидный id" });
+      }
       return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: "Пользователь по id не найден" });
-    }
-    res.send({ data: updatedUser });
-  } catch (error) {
-    if (error.name === "CastError") {
-      return res
-        .status(CLIENT_ERROR_CODE)
-        .send({ message: "Передан невалидный id" });
-    }
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: "Ошибка на стороне сервера" });
-  }
+        .status(SERVER_ERROR_CODE)
+        .send({ message: "Ошибка на стороне сервера" });
+    });
 };
 
 const patchAvatar = async (req, res) => {
-  try {
-    User.findByIdAndUpdate(req.user._id, req.body)
-      .orFail(() => {
-        throw new Error("NotFound");
-      }) //передаю в медот айди и объект с данными для обновления
-
-      .then((user) => {
-        console.log(req.body);
-        console.log(user);
-        res.send({ data: user });
-      });
-  } catch (error) {
-    if (error.message === "NotFound") {
+  User.findByIdAndUpdate(req.user._id, req.body)
+    .orFail(() => {
+      throw new Error("NotFound");
+    })
+    .then((user) => {
+      console.log(req.body);
+      console.log(user);
+      res.send({ data: user });
+    })
+    .catch((error) => {
+      if (error.name === "ValidationError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Ошибка валидации полей" });
+      }
+      if (error.message === "NotFound") {
+        return res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: "Пользователь по id не найден" });
+      }
+      if (error.name === "ValidationError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Ошибка валидации полей" });
+      }
+      if (error.name === "CastError") {
+        return res
+          .status(CLIENT_ERROR_CODE)
+          .send({ message: "Передан невалидный id" });
+      }
       return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: "Пользователь по id не найден" });
-    }
-    if (error.name === "CastError") {
-      return res
-        .status(CLIENT_ERROR_CODE)
-        .send({ message: "Передан невалидный id" });
-    }
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: "Ошибка на стороне сервера" });
-  }
+        .status(SERVER_ERROR_CODE)
+        .send({ message: "Ошибка на стороне сервера" });
+    });
 };
 
 module.exports = {
