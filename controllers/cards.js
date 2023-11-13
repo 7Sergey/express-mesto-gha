@@ -54,7 +54,7 @@ const deleteCard = async (req, res) => {
           .status(CLIENT_ERROR_CODE)
           .send({ message: 'Ошибка валидации полей' });
       }
-      res.status(SERVER_ERROR_CODE).send({ message: 'Произошла ошибка на сервере' });
+      return res.status(SERVER_ERROR_CODE).send({ message: 'Произошла ошибка на сервере' });
     });
 };
 
@@ -79,7 +79,7 @@ const likeCard = async (req, res) => {
       } else {
         res
           .status(SERVER_ERROR_CODE)
-          .send({ message: 'Произошла ошибка на сервере'});
+          .send({ message: 'Произошла ошибка на сервере' });
       }
     });
 };
@@ -101,11 +101,11 @@ const dislikeCard = async (req, res) => {
       if (error.name === 'CastError') {
         res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Некорректный формат ID'});
+          .send({ message: 'Некорректный формат ID' });
       } else {
         res
           .status(SERVER_ERROR_CODE)
-          .send({ message: 'Произошла ошибка на сервере'});
+          .send({ message: 'Произошла ошибка на сервере' });
       }
     });
 };

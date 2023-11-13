@@ -24,7 +24,6 @@ const userSchema = new mongoose.Schema(
   {
     versionKey: false, // не отслеживать версию схемы во время создания карточки
     timestamps: true, //  время создания.
-  }
-)
-module.exports = mongoose.model('user', userSchema)
-
+  },
+);
+module.exports = mongoose.model('user', userSchema);

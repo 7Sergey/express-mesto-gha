@@ -49,18 +49,17 @@ const createUser = async (req, res) => {
   return newUser
     .save()
     .then((savedUser) => {
-      return res.status(201).send(savedUser);
+      res.status(201).send(savedUser);
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
         return res
           .status(CLIENT_ERROR_CODE)
           .send({ message: 'Ошибка валидации полей' });
-      } else {
-        return res
-          .status(SERVER_ERROR_CODE)
-          .send({ message: 'Ошибка на стороне сервера' });
       }
+      return res
+        .status(SERVER_ERROR_CODE)
+        .send({ message: 'Ошибка на стороне сервера' });
     });
 };
 
@@ -68,7 +67,7 @@ const patchUser = async (req, res) => {
   User.findByIdAndUpdate(
     req.user._id,
     { name: req.body.name, about: req.body.about },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   )
     .then((updatedUser) => {
       if (!updatedUser) {
@@ -76,7 +75,7 @@ const patchUser = async (req, res) => {
           .status(NOT_FOUND_ERROR_CODE)
           .send({ message: 'Пользователь по id не найден' });
       }
-      res.send({ data: updatedUser });
+      return res.send({ data: updatedUser });
     })
 
     .catch((error) => {
