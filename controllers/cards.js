@@ -8,7 +8,8 @@ const Card = require('../models/Card');
 
 const getCards = async (req, res) => {
   Card.find({})
-    .then((cards) => {res.send(cards);
+    .then((cards) => {
+      res.send(cards);
     })
     .catch(() => {
       res

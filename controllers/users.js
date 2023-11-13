@@ -9,7 +9,7 @@ const User = require('../models/User');
 const getUsers = async (req, res) => {
   User.find({})
     .then((users) => {
-      return res.send(users)
+      res.send(users);
     })
     .catch((error) => {
       res.status(SERVER_ERROR_CODE).send({ message: error.message });
