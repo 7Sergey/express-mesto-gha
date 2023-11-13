@@ -1,3 +1,9 @@
+const {
+  NOT_FOUND_ERROR_CODE,
+  CLIENT_ERROR_CODE,
+  SERVER_ERROR_CODE,
+} = require("../constants/constants");
+
 const Card = require("../models/Card");
 
 const getCards = async (req, res) => {
@@ -5,7 +11,9 @@ const getCards = async (req, res) => {
     const cards = await Card.find({});
     return res.send(cards);
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    res
+      .status(SERVER_ERROR_CODE)
+      .send({ message: "Произошла ошибка на сервере" });
   }
 };
 const createCard = async (req, res) => {
@@ -16,8 +24,8 @@ const createCard = async (req, res) => {
   } catch (error) {
     if (error.name === "ValidationError") {
       return res
-        .status(400)
-        .send({ message: "Ошибка валидации полей", ...error });
+        .status(CLIENT_ERROR_CODE)
+        .send({ message: "Ошибка валидации полей" });
     }
   }
 };
@@ -26,9 +34,17 @@ const deleteCard = async (req, res) => {
   try {
     const { idCard } = req.params; //получаем передаваемый через /:idCard
 
-    Card.findByIdAndRemove(idCard).then((card) => res.send({ data: card }));
+    Card.findByIdAndRemove(idCard).then((card) => {
+      if (!card) {
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: "Карта не найдена" });
+      } else {
+        res.send({ data: card });
+      }
+    });
   } catch (error) {
-    res.status(500).send({ message: "Произошла ошибка" });
+    res
+      .status(SERVER_ERROR_CODE)
+      .send({ message: "Произошла ошибка на сервере" });
   }
 };
 
@@ -36,11 +52,23 @@ const likeCard = async (req, res) => {
   try {
     Card.findByIdAndUpdate(
       req.params.idCard,
-      { $addToSet: { likes: req.user._id } }, // добавить _id в массив, если его там нет
+      { $addToSet: { likes: req.user._id } },
       { new: true }
-    ).then((Card) => res.send({ data: Card }));
+    ).then((card) => {
+      if (!card) {
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: "Карта не найдена" });
+      } else {
+        res.send({ data: card });
+      }
+    });
   } catch (error) {
-    res.status(500).send({ message: "Произошла ошибка" });
+    if (error.name === "CastError") {
+      res.status(CLIENT_ERROR_CODE).send({ message: "Некорректный формат ID" });
+    } else {
+      res
+        .status(SERVER_ERROR_CODE)
+        .send({ message: "Произошла ошибка на сервере" });
+    }
   }
 };
 
@@ -50,9 +78,21 @@ const dislikeCard = async (req, res) => {
       req.params.idCard,
       { $pull: { likes: req.user._id } }, // убрать _id из массива
       { new: true }
-    ).then((Card) => res.send({ data: Card }));
+    ).then((card) => {
+      if (!card) {
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: "Карта не найдена" });
+      } else {
+        res.send({ data: card });
+      }
+    });
   } catch (error) {
-    res.status(500).send({ message: "Произошла ошибка" });
+    if (error.name === "CastError") {
+      res.status(CLIENT_ERROR_CODE).send({ message: "Некорректный формат ID" });
+    } else {
+      res
+        .status(SERVER_ERROR_CODE)
+        .send({ message: "Произошла ошибка на сервере" });
+    }
   }
 };
 
