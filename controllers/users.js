@@ -96,7 +96,11 @@ const patchUser = async (req, res) => {
 };
 
 const patchAvatar = async (req, res) => {
-  User.findByIdAndUpdate(req.user._id, req.body)
+  User.findByIdAndUpdate(
+    (req.user._id, req.body),
+    { name: req.body.name, about: req.body.about },
+    { new: true, runValidators: true },
+  )
     .orFail(() => {
       throw new Error('NotFound');
     })
