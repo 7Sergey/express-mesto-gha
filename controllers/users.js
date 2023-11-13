@@ -97,8 +97,8 @@ const patchUser = async (req, res) => {
 
 const patchAvatar = async (req, res) => {
   User.findByIdAndUpdate(
-    (req.user._id, req.body),
-    { name: req.body.name, about: req.body.about },
+    req.user._id,
+    { avatar: req.body.avatar },
     { new: true, runValidators: true },
   )
     .orFail(() => {
