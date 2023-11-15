@@ -1,67 +1,93 @@
+const bcrypt = require('bcryptjs') // импортируем bcrypt
+const User = require('../models/User')
+
 const {
   NOT_FOUND_ERROR_CODE,
   CLIENT_ERROR_CODE,
   SERVER_ERROR_CODE,
-} = require('../constants/constants');
-
-const User = require('../models/User');
+  SALT_ROUNDS,
+  MONGO_DUPLICATE_ERROR_CODE,
+  CONFLICT_ERROR_CODE,
+} = require('../constants/constants')
 
 const getUsers = async (req, res) => {
   User.find({})
     .then((users) => {
-      res.send(users);
+      res.send(users)
     })
     .catch((error) => {
-      res.status(SERVER_ERROR_CODE).send({ message: error.message });
-    });
-};
+      res.status(SERVER_ERROR_CODE).send({ message: error.message })
+    })
+}
 
 const getUserById = async (req, res) => {
-  const { idUser } = req.params; // Забирает id из адресной строки '/:id'
+  const { idUser } = req.params // Забирает id из адресной строки '/:id'
 
   return User.findById(idUser)
     .then((user) => {
       if (!user) {
-        throw new Error('NotFound');
+        throw new Error('NotFound')
       }
-      res.send(user); // Вернули пользователя
+      res.send(user) // Вернули пользователя
     })
     .catch((error) => {
       if (error.message === 'NotFound') {
         return res
           .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь по id не найден' });
+          .send({ message: 'Пользователь по id не найден' })
       }
       if (error.name === 'CastError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Передан невалидный id' });
+          .send({ message: 'Передан невалидный id' })
       }
       return res
         .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' });
-    });
-};
+        .send({ message: 'Ошибка на стороне сервера' })
+    })
+}
 
 const createUser = async (req, res) => {
-  const newUser = new User(req.body);
-
-  return newUser
-    .save()
-    .then((savedUser) => {
-      res.status(201).send(savedUser);
+  try {
+    // хешируем пароль
+    const { name, about, avatar, email, password } = req.body
+    const hash = await bcrypt.hash(password, SALT_ROUNDS)
+    const newUser = await User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
     })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' });
-      }
+    return res.send(newUser.email, newUser._id)
+  } catch (error) {
+    if (error.code === MONGO_DUPLICATE_ERROR_CODE) {
+      return res.status(CONFLICT_ERROR_CODE).send({
+        message: 'Такой пользователь уже существует',
+        errorCode: error.code,
+      })
+    }
+    if (error.name === 'ValidationError') {
       return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' });
-    });
-};
+        .status(CLIENT_ERROR_CODE)
+        .send({ message: 'Ошибка валидации полей' })
+    }
+    return res
+      .status(SERVER_ERROR_CODE)
+      .send({ message: 'Ошибка на стороне сервера' })
+  }
+}
+// .catch((error) => {
+//   if (error.name === 'ValidationError') {
+//     return res
+//       .status(CLIENT_ERROR_CODE)
+//       .send({ message: 'Ошибка валидации полей' })
+//   }
+//   return res
+//     .status(SERVER_ERROR_CODE)
+//     .send({ message: 'Ошибка на стороне сервера' })
+// })
+// })
 
 const patchUser = async (req, res) => {
   User.findByIdAndUpdate(
@@ -73,27 +99,27 @@ const patchUser = async (req, res) => {
       if (!updatedUser) {
         return res
           .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь по id не найден' });
+          .send({ message: 'Пользователь по id не найден' })
       }
-      return res.send({ data: updatedUser });
+      return res.send({ data: updatedUser })
     })
 
     .catch((error) => {
       if (error.name === 'ValidationError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' });
+          .send({ message: 'Ошибка валидации полей' })
       }
       if (error.name === 'CastError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Передан невалидный id' });
+          .send({ message: 'Передан невалидный id' })
       }
       return res
         .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' });
-    });
-};
+        .send({ message: 'Ошибка на стороне сервера' })
+    })
+}
 
 const patchAvatar = async (req, res) => {
   User.findByIdAndUpdate(
@@ -102,42 +128,56 @@ const patchAvatar = async (req, res) => {
     { new: true, runValidators: true },
   )
     .orFail(() => {
-      throw new Error('NotFound');
+      throw new Error('NotFound')
     })
     .then((user) => {
-      res.send({ data: user });
+      res.send({ data: user })
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' });
+          .send({ message: 'Ошибка валидации полей' })
       }
       if (error.message === 'NotFound') {
         return res
           .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь по id не найден' });
+          .send({ message: 'Пользователь по id не найден' })
       }
       if (error.name === 'ValidationError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' });
+          .send({ message: 'Ошибка валидации полей' })
       }
       if (error.name === 'CastError') {
         return res
           .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Передан невалидный id' });
+          .send({ message: 'Передан невалидный id' })
       }
       return res
         .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' });
-    });
-};
+        .send({ message: 'Ошибка на стороне сервера' })
+    })
+}
 
+const login = async (req, res) => {
+  res.send('Логинемся')
+  const { email, password } = req.body
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      console.log(user, 'Почта и пароль подходят')
+    })
+    .catch((err) => {
+      // ошибка аутентификации
+      res.status(401).send({ message: err.message })
+    })
+}
 module.exports = {
   getUsers,
   getUserById,
   createUser,
   patchUser,
   patchAvatar,
-};
+  login,
+}

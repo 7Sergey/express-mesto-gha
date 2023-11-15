@@ -12,14 +12,18 @@
   "author": "Sergey",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "mongoose": "^6.7.5"
   },
   "devDependencies": {
     "eslint": "^8.53.0",
-    "nodemon": "^2.0.20",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.29.0"
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "nodemon": "^2.0.20",
+    "prettier": "^3.1.0"
   }
 }

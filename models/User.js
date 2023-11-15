@@ -1,29 +1,48 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String, // имя — это строка
-      required: true, // оно должно быть у каждого пользователя, так что имя — обязательное поле
       minlength: 2, // минимальная длина имени — 2 символа
       maxlength: 30, // а максимальная — 30 символов
+      default: 'Жак-Ив Кусто',
     },
     about: {
       //  описание
       type: String,
-      required: true, // оно должно быть у каждого пользователя, так что имя — обязательное поле
       minlength: 2, // минимальная длина имени — 2 символа
       maxlength: 30, // а максимальная — 30 символов
+      default: 'Исследователь',
     },
     avatar: {
       //  аватар
       type: String,
-      required: true,
+      default:
+        'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    },
+    email: {
+      type: String,
+      required: {
+        value: true,
+        message: 'Поле email является обязательным',
+      },
+      minlength: 8,
+      // валидация поля email
+    },
+    password: {
+      //  пароль
+      type: String,
+      required: {
+        value: true,
+        message: 'Поле password является обязательным',
+      },
     },
   },
   {
     versionKey: false, // не отслеживать версию схемы во время создания карточки
     timestamps: true, //  время создания.
   },
-);
-module.exports = mongoose.model('user', userSchema);
+)
+
+module.exports = mongoose.model('user', userSchema)

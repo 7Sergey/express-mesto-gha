@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const cardSchema = new mongoose.Schema(
   {
@@ -31,6 +31,6 @@ const cardSchema = new mongoose.Schema(
     versionKey: false, // не отслеживать версию схемы во время создания карточки
     timestamps: true, //  время создания.
   },
-);
+)
 
-module.exports = mongoose.model('card', cardSchema);
+module.exports = mongoose.model('card', cardSchema)
