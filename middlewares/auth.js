@@ -6,7 +6,8 @@ const { SECRET_KEY, NODE_ENV } = process.env
 function auth(req, res, next) {
   let payload
   try {
-    const token = req.headers.authorization
+    const token = req.cookies.userToken
+
     if (!token) {
       throw new Error('NotAutanticate')
     }

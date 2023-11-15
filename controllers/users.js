@@ -164,7 +164,12 @@ const login = async (req, res) => {
       throw new Error('NotAutanticate')
     }
     const token = generateToken({ _id: user._id })
-    return res.send({ token })
+    res.cookie('userToken', token, {
+      httpOnly: true,
+      sameSite: true,
+      maxAge: 360000,
+    })
+    return res.send({ email: user.email })
   } catch (error) {
     if (error.message === 'NotAutanticate') {
       return res.send({
