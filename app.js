@@ -7,8 +7,8 @@ const router = require('./routes/router')
 require('dotenv').config() // Подключаем переменные окружения из файла .env
 
 const app = express()
-const { MONGO_URL } = process.env
-mongoose.connect(MONGO_URL)
+// const { MONGO_URL } = process.env
+mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
 
 // app.use((req, res, next) => {
 //   req.user = {
