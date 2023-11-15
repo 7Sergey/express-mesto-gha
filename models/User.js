@@ -23,20 +23,16 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: {
-        value: true,
-        message: 'Поле email является обязательным',
-      },
+      unique: true,
+      required: true,
       minlength: 8,
       // валидация поля email
     },
     password: {
       //  пароль
       type: String,
-      required: {
-        value: true,
-        message: 'Поле password является обязательным',
-      },
+      required: true,
+      select: false,
     },
   },
   {

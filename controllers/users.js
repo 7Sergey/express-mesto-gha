@@ -9,6 +9,7 @@ const {
   MONGO_DUPLICATE_ERROR_CODE,
   CONFLICT_ERROR_CODE,
 } = require('../constants/constants')
+const { generateToken } = require('../utils/jwt')
 
 const getUsers = async (req, res) => {
   User.find({})
@@ -59,7 +60,7 @@ const createUser = async (req, res) => {
       email,
       password: hash,
     })
-    return res.send(newUser.email, newUser._id)
+    return res.status(201).send(newUser)
   } catch (error) {
     if (error.code === MONGO_DUPLICATE_ERROR_CODE) {
       return res.status(CONFLICT_ERROR_CODE).send({
@@ -77,17 +78,6 @@ const createUser = async (req, res) => {
       .send({ message: 'Ошибка на стороне сервера' })
   }
 }
-// .catch((error) => {
-//   if (error.name === 'ValidationError') {
-//     return res
-//       .status(CLIENT_ERROR_CODE)
-//       .send({ message: 'Ошибка валидации полей' })
-//   }
-//   return res
-//     .status(SERVER_ERROR_CODE)
-//     .send({ message: 'Ошибка на стороне сервера' })
-// })
-// })
 
 const patchUser = async (req, res) => {
   User.findByIdAndUpdate(
@@ -161,17 +151,31 @@ const patchAvatar = async (req, res) => {
 }
 
 const login = async (req, res) => {
-  res.send('Логинемся')
   const { email, password } = req.body
 
-  return User.findUserByCredentials(email, password)
-    .then((user) => {
-      console.log(user, 'Почта и пароль подходят')
-    })
-    .catch((err) => {
-      // ошибка аутентификации
-      res.status(401).send({ message: err.message })
-    })
+  try {
+    const user = await User.findOne({ email })
+      .select('+password')
+      .orFail(() => new Error('NotAutanticate'))
+    // сравниваем пароли
+    const mathed = await bcrypt.compare(String(password), user.password)
+    //  выбрасываем новую ошибку, если не совпадают
+    if (!mathed) {
+      throw new Error('NotAutanticate')
+    }
+    const token = generateToken({ _id: user._id })
+    return res.send({ token })
+  } catch (error) {
+    if (error.message === 'NotAutanticate') {
+      return res.send({
+        message:
+          'Неверные учетные данные. Пожалуйста, войдите с правильным email и паролем.',
+      })
+    }
+    return res
+      .status(SERVER_ERROR_CODE)
+      .send({ message: 'Ошибка на стороне сервера' })
+  }
 }
 module.exports = {
   getUsers,
