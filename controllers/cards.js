@@ -2,9 +2,11 @@ const {
   NOT_FOUND_ERROR_CODE,
   CLIENT_ERROR_CODE,
   SERVER_ERROR_CODE,
+  UNAUTHORIZED_ERROR_CODE,
 } = require('../constants/constants')
 
 const Card = require('../models/Card')
+// const NotFoundError = require('../errors/not-found-err')
 
 const getCards = async (req, res) => {
   Card.find({})
@@ -40,24 +42,43 @@ const createCard = async (req, res) => {
 const deleteCard = async (req, res) => {
   const { idCard } = req.params
 
-  Card.findByIdAndRemove(idCard)
-    .then((card) => {
-      if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карта не найдена' })
-      } else {
-        res.send({ data: card })
-      }
-    })
-    .catch((error) => {
-      if (error.name === 'CastError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' })
-      }
+  try {
+    const card = await Card.findById(idCard)
+
+    if (!card) {
       return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Произошла ошибка на сервере' })
-    })
+        .status(NOT_FOUND_ERROR_CODE)
+        .send({ message: 'Карта не найдена' })
+    }
+
+    // Проверяем, является ли текущий пользователь создателем карточки
+    if (card.owner.toString() !== req.user._id) {
+      return res
+        .status(UNAUTHORIZED_ERROR_CODE)
+        .send({ message: 'Нет прав для удаления этой карточки' })
+    }
+
+    // Если пользователь - создатель, то удаляем карточку
+    const deletedCard = await Card.findByIdAndRemove(idCard)
+
+    if (!deletedCard) {
+      return res
+        .status(NOT_FOUND_ERROR_CODE)
+        .send({ message: 'Карта не найдена' })
+    }
+
+    return res.send({ data: deletedCard })
+  } catch (error) {
+    if (error.name === 'CastError') {
+      return res
+        .status(CLIENT_ERROR_CODE)
+        .send({ message: 'Ошибка валидации полей' })
+    }
+
+    return res
+      .status(SERVER_ERROR_CODE)
+      .send({ message: 'Произошла ошибка на сервере' })
+  }
 }
 
 const likeCard = async (req, res) => {

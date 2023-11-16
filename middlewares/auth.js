@@ -12,15 +12,15 @@ function auth(req, res, next) {
     const token = req.cookies.userToken
 
     if (!token) {
-      throw new Error('NotAutanticate')
+      throw new Error('NotAuthenticate')
     }
     const validTocken = token.replace('Bearer ', '')
     payload = jwt.verify(validTocken, NODE_ENV ? SECRET_KEY : 'dev_secret')
   } catch (error) {
-    if (error.message === 'NotAutanticate') {
+    if (error.message === 'NotAuthenticate') {
       return res.status(UNAUTHORIZED_ERROR_CODE).send({
         message:
-          'Неверные учетные данные. Пожалуйста, войдите с правильным email и паролем.',
+          'Для доступа к защищенным страницам необходимо авторизоваться.',
       })
     }
     if (error.name === 'JsonWebTokenError') {
@@ -32,7 +32,8 @@ function auth(req, res, next) {
       .status(SERVER_ERROR_CODE)
       .send({ message: 'Ошибка на стороне сервера' })
   }
-  req.name = payload
+  // присваиваем айди пользователя для удаления/добавления лайков
+  req.user = payload
   // добавил return, чтобы линтер не ругался
   return next()
 }

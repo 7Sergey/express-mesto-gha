@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs') // импортируем bcrypt
 const User = require('../models/User')
+const authMiddleware = require('../middlewares/auth')
 
 const {
   NOT_FOUND_ERROR_CODE,
@@ -157,12 +158,12 @@ const login = async (req, res) => {
   try {
     const user = await User.findOne({ email })
       .select('+password')
-      .orFail(() => new Error('NotAutanticate'))
+      .orFail(() => new Error('NotAuthenticate'))
     // сравниваем пароли
     const mathed = await bcrypt.compare(String(password), user.password)
     //  выбрасываем новую ошибку, если не совпадают
     if (!mathed) {
-      throw new Error('NotAutanticate')
+      throw new Error('NotAuthenticate')
     }
     const token = generateToken({ _id: user._id })
     res.cookie('userToken', token, {
@@ -173,10 +174,10 @@ const login = async (req, res) => {
     })
     return res.send({ email: user.email })
   } catch (error) {
-    if (error.message === 'NotAutanticate') {
+    if (error.message === 'NotAuthenticate') {
       return res.status(UNAUTHORIZED_ERROR_CODE).send({
         message:
-          'Неверные учетные данные. Пожалуйста, войдите с правильным email и паролем.',
+          'Для доступа к защищенным страницам необходимо авторизоваться.',
       })
     }
     return res
@@ -203,6 +204,32 @@ const infoUser = async (req, res) => {
     res.status(401).json({ error: 'Пользователь не аутентифицирован' })
   }
 }
+
+const getCurrentUser = async (req, res) => {
+  try {
+    // Вызываем middleware аутентификации
+    authMiddleware.auth(req, res, async () => {
+      // Если аутентификация прошла успешно, продолжаем с обработкой запроса
+      const currentUser = await User.findById(req.user._id)
+
+      // Проверяем, существует ли пользователь
+      if (!currentUser) {
+        return res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: 'Пользователь не найден' })
+      }
+
+      // Отправляем информацию о пользователе в ответ
+      return res.send(currentUser)
+    })
+  } catch (error) {
+    return res
+      .status(SERVER_ERROR_CODE)
+      .send({ message: 'Ошибка на стороне сервера' })
+  }
+  // Добавляем возврат для устранения ошибки eslintconsistent-return
+  return null
+}
 module.exports = {
   getUsers,
   getUserById,
@@ -211,4 +238,5 @@ module.exports = {
   patchAvatar,
   login,
   infoUser,
+  getCurrentUser,
 }
