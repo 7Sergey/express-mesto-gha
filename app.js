@@ -1,5 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
+const { errors } = require('celebrate')
+
 const cookieParser = require('cookie-parser')
 
 const router = require('./routes/router')
@@ -10,17 +12,11 @@ const app = express()
 // const { MONGO_URL } = process.env
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '654cac1196a81353cc9ac25d', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  }
-
-  next()
-})
-
 app.use(express.json()) // метод обогащает последующие роуты body
 app.use(cookieParser())
 app.use(router)
+
+app.use(errors()) // обработчик ошибок celebrate
 
 app.listen(3000, () => {
   console.log('Сервер запущен')

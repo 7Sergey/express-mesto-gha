@@ -6,7 +6,6 @@ const {
 } = require('../constants/constants')
 
 const Card = require('../models/Card')
-// const NotFoundError = require('../errors/not-found-err')
 
 const getCards = async (req, res) => {
   Card.find({})
