@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { default: isEmail } = require('validator/lib/isEmail')
 
 const userSchema = new mongoose.Schema(
   {
@@ -27,6 +28,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 8,
       // валидация поля email
+      validate: {
+        validator: (v) => isEmail(v),
+        message: 'Некорректный формат email',
+      },
     },
     password: {
       //  пароль

@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken') // импортируем модуль jsonwebtoken
-const { SERVER_ERROR_CODE } = require('../constants/constants')
+const {
+  SERVER_ERROR_CODE,
+  UNAUTHORIZED_ERROR_CODE,
+} = require('../constants/constants')
 
 const { SECRET_KEY, NODE_ENV } = process.env
 
@@ -15,7 +18,7 @@ function auth(req, res, next) {
     payload = jwt.verify(validTocken, NODE_ENV ? SECRET_KEY : 'dev_secret')
   } catch (error) {
     if (error.message === 'NotAutanticate') {
-      return res.send({
+      return res.status(UNAUTHORIZED_ERROR_CODE).send({
         message:
           'Неверные учетные данные. Пожалуйста, войдите с правильным email и паролем.',
       })

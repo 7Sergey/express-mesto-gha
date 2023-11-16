@@ -8,6 +8,7 @@ const {
   SALT_ROUNDS,
   MONGO_DUPLICATE_ERROR_CODE,
   CONFLICT_ERROR_CODE,
+  UNAUTHORIZED_ERROR_CODE,
 } = require('../constants/constants')
 const { generateToken } = require('../utils/jwt')
 
@@ -167,12 +168,13 @@ const login = async (req, res) => {
     res.cookie('userToken', token, {
       httpOnly: true,
       sameSite: true,
-      maxAge: 360000,
+      // срок действия токена 1 неделя
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     })
     return res.send({ email: user.email })
   } catch (error) {
     if (error.message === 'NotAutanticate') {
-      return res.send({
+      return res.status(UNAUTHORIZED_ERROR_CODE).send({
         message:
           'Неверные учетные данные. Пожалуйста, войдите с правильным email и паролем.',
       })
@@ -182,6 +184,25 @@ const login = async (req, res) => {
       .send({ message: 'Ошибка на стороне сервера' })
   }
 }
+
+const infoUser = async (req, res) => {
+  const userIdFromCookie = req.cookies
+  console.log(req.cookies)
+  if (userIdFromCookie) {
+    // Здесь вы можете использовать userId для получения информации о текущем пользователе из вашей базы данных или другого источника
+    // Пример: извлечение информации о пользователе из базы данных
+    const user = User.findOne({ id: req.cookies })
+
+    if (user) {
+      res.send({ user })
+    } else {
+      res.status(404).json({ error: 'Пользователь не найден' })
+    }
+  } else {
+    // Если идентификатор пользователя отсутствует в куках, вернуть ошибку или пустой объект
+    res.status(401).json({ error: 'Пользователь не аутентифицирован' })
+  }
+}
 module.exports = {
   getUsers,
   getUserById,
@@ -189,4 +210,5 @@ module.exports = {
   patchUser,
   patchAvatar,
   login,
+  infoUser,
 }
