@@ -1,4 +1,6 @@
 const express = require('express')
+const { celebrate, Joi } = require('celebrate')
+
 const {
   getCards,
   createCard,
@@ -10,7 +12,15 @@ const {
 const cardRouter = express.Router()
 
 cardRouter.get('/', getCards)
-cardRouter.post('/', createCard)
+cardRouter.post(
+  '/',
+  celebrate({
+    body: Joi.object().keys({
+      name: Joi.string().required().min(2).max(30),
+    }),
+  }),
+  createCard,
+)
 cardRouter.delete('/:idCard', deleteCard)
 cardRouter.put('/:idCard/likes', likeCard)
 cardRouter.delete('/:idCard/likes', dislikeCard)
