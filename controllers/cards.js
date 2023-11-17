@@ -32,23 +32,20 @@ const deleteCard = (req, res, next) => {
         const err = new Error('Карта не найдена')
         err.statusCode = NOT_FOUND_ERROR_CODE
         next(err)
+        return
       }
       // Проверяем, является ли текущий пользователь создателем карточки
       if (card.owner.toString() !== req.user._id) {
         const err = new Error('Нет прав для удаления этой карточки')
         err.statusCode = UNAUTHORIZED_ERROR_CODE
         next(err)
+        return
       }
       // Если пользователь - создатель, то удаляем карточку
-      return Card.findByIdAndRemove(idCard)
+      Card.deleteOne(card)
     })
-    .then((deletedCard) => {
-      if (!deletedCard) {
-        const err = new Error('Карта не найдена')
-        err.statusCode = NOT_FOUND_ERROR_CODE
-        next(err)
-      }
-      return res.send({ data: deletedCard })
+    .then((card) => {
+      res.send({ data: card })
     })
     .catch(next)
 }
@@ -64,9 +61,9 @@ const likeCard = async (req, res, next) => {
         const err = new Error('Карта не найдена')
         err.statusCode = NOT_FOUND_ERROR_CODE
         next(err)
-      } else {
-        res.send({ data: card })
+        return
       }
+      res.send({ data: card })
     })
     .catch(next)
 }
@@ -82,9 +79,9 @@ const dislikeCard = async (req, res, next) => {
         const err = new Error('Карта не найдена')
         err.statusCode = NOT_FOUND_ERROR_CODE
         next(err)
-      } else {
-        res.send({ data: card })
+        return
       }
+      res.send({ data: card })
     })
     .catch(next)
 }

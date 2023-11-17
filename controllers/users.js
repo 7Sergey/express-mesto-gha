@@ -4,26 +4,20 @@ const authMiddleware = require('../middlewares/auth')
 
 const {
   NOT_FOUND_ERROR_CODE,
-  CLIENT_ERROR_CODE,
-  SERVER_ERROR_CODE,
   SALT_ROUNDS,
-  MONGO_DUPLICATE_ERROR_CODE,
-  CONFLICT_ERROR_CODE,
   UNAUTHORIZED_ERROR_CODE,
 } = require('../constants/constants')
 const { generateToken } = require('../utils/jwt')
 
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
   User.find({})
     .then((users) => {
       res.send(users)
     })
-    .catch((error) => {
-      res.status(SERVER_ERROR_CODE).send({ message: error.message })
-    })
+    .catch(next)
 }
 
-const getUserById = async (req, res) => {
+const getUserById = async (req, res, next) => {
   const { idUser } = req.params // Забирает id из адресной строки '/:id'
 
   return User.findById(idUser)
@@ -33,24 +27,9 @@ const getUserById = async (req, res) => {
       }
       res.send(user) // Вернули пользователя
     })
-    .catch((error) => {
-      if (error.message === 'NotFound') {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь по id не найден' })
-      }
-      if (error.name === 'CastError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Передан невалидный id' })
-      }
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' })
-    })
+    .catch(next)
 }
-
-const createUser = async (req, res) => {
+const createUser = async (req, res, next) => {
   try {
     // хешируем пароль
     const { name, about, avatar, email, password } = req.body
@@ -62,22 +41,19 @@ const createUser = async (req, res) => {
       email,
       password: hash,
     })
-    return res.status(201).send(newUser)
+
+    // Создаем новый объект пользователя без хеша
+    const userWithoutHash = {
+      _id: newUser._id,
+      name: newUser.name,
+      about: newUser.about,
+      avatar: newUser.avatar,
+      email: newUser.email,
+    }
+    // вернем пользователя без хеша
+    res.status(201).send({ data: userWithoutHash })
   } catch (error) {
-    if (error.code === MONGO_DUPLICATE_ERROR_CODE) {
-      return res.status(CONFLICT_ERROR_CODE).send({
-        message: 'Такой пользователь уже существует',
-        errorCode: error.code,
-      })
-    }
-    if (error.name === 'ValidationError') {
-      return res
-        .status(CLIENT_ERROR_CODE)
-        .send({ message: 'Ошибка валидации полей' })
-    }
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: 'Ошибка на стороне сервера' })
+    next(error)
   }
 }
 
@@ -92,8 +68,9 @@ const patchUser = async (req, res, next) => {
         const err = new Error('Пользователь по id не найден')
         err.statusCode = NOT_FOUND_ERROR_CODE
         next(err)
+        return
       }
-      return res.send({ data: updatedUser })
+      res.send({ data: updatedUser })
     })
 
     .catch(next)
@@ -141,6 +118,7 @@ const login = (req, res, next) => {
         )
         err.statusCode = UNAUTHORIZED_ERROR_CODE
         next(err)
+        return
       }
 
       const token = generateToken({ _id: foundUser._id })
@@ -150,7 +128,7 @@ const login = (req, res, next) => {
         // срок действия токена 1 неделя
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
-      return res.send({ email: foundUser.email })
+      res.send({ email: foundUser.email })
     })
     .catch(next)
 }

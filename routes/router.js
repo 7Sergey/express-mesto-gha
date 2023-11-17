@@ -8,8 +8,6 @@ const { login, createUser } = require('../controllers/users')
 const { auth } = require('../middlewares/auth')
 
 const router = express.Router()
-router.use('/users', auth, userRouter)
-router.use('/cards', auth, cardRouter)
 
 // роуты логина и регистрации
 router.post('/signin', login)
@@ -20,15 +18,24 @@ router.post(
     body: Joi.object().keys({
       email: Joi.string().required().min(2).max(30),
       password: Joi.string().required().min(8),
+      name: Joi.string().min(2).max(30),
+      about: Joi.string().min(2).max(30),
+      avatar: Joi.string().pattern(
+        /^(https?:\/\/)www\.[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=,]+#?$/,
+      ),
     }),
   }),
   createUser,
 )
+// защищенные роуты ниже
+router.use(auth)
+router.use('/users', userRouter)
+router.use('/cards', cardRouter)
 
-router.use((req, res) => {
-  res
-    .status(NOT_FOUND_ERROR_CODE)
-    .send({ message: 'Такой страницы не сущетвует' })
+router.use((req, res, next) => {
+  const err = new Error('Такой страницы не существует')
+  err.statusCode = NOT_FOUND_ERROR_CODE
+  next(err)
 })
 
 module.exports = router
