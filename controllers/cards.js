@@ -1,7 +1,5 @@
-const {
-  NOT_FOUND_ERROR_CODE,
-  UNAUTHORIZED_ERROR_CODE,
-} = require('../constants/constants')
+const NotFoundError = require('../errors/not-found')
+const UnauthorizedError = require('../errors/unauthorized')
 
 const Card = require('../models/Card')
 
@@ -29,15 +27,13 @@ const deleteCard = (req, res, next) => {
   Card.findById(idCard)
     .then((card) => {
       if (!card) {
-        const err = new Error('Карта не найдена')
-        err.statusCode = NOT_FOUND_ERROR_CODE
+        const err = new NotFoundError('Карта не найдена')
         next(err)
         return
       }
       // Проверяем, является ли текущий пользователь создателем карточки
       if (card.owner.toString() !== req.user._id) {
-        const err = new Error('Нет прав для удаления этой карточки')
-        err.statusCode = UNAUTHORIZED_ERROR_CODE
+        const err = new UnauthorizedError('Нет прав для удаления этой карточки')
         next(err)
         return
       }
@@ -58,8 +54,7 @@ const likeCard = async (req, res, next) => {
   )
     .then((card) => {
       if (!card) {
-        const err = new Error('Карта не найдена')
-        err.statusCode = NOT_FOUND_ERROR_CODE
+        const err = new NotFoundError('Карта не найдена')
         next(err)
         return
       }
@@ -76,8 +71,7 @@ const dislikeCard = async (req, res, next) => {
   )
     .then((card) => {
       if (!card) {
-        const err = new Error('Карта не найдена')
-        err.statusCode = NOT_FOUND_ERROR_CODE
+        const err = new NotFoundError('Карта не найдена')
         next(err)
         return
       }

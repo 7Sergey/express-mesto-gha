@@ -2,12 +2,10 @@ const bcrypt = require('bcryptjs') // импортируем bcrypt
 const User = require('../models/User')
 const authMiddleware = require('../middlewares/auth')
 
-const {
-  NOT_FOUND_ERROR_CODE,
-  SALT_ROUNDS,
-  UNAUTHORIZED_ERROR_CODE,
-} = require('../constants/constants')
+const { SALT_ROUNDS } = require('../constants/constants')
 const { generateToken } = require('../utils/jwt')
+const NotFoundError = require('../errors/not-found')
+const UnauthorizedError = require('../errors/unauthorized')
 
 const getUsers = async (req, res, next) => {
   User.find({})
@@ -23,7 +21,7 @@ const getUserById = async (req, res, next) => {
   return User.findById(idUser)
     .then((user) => {
       if (!user) {
-        throw new Error('NotFound')
+        throw new NotFoundError('Пользователь не найден')
       }
       res.send(user) // Вернули пользователя
     })
@@ -65,8 +63,7 @@ const patchUser = async (req, res, next) => {
   )
     .then((updatedUser) => {
       if (!updatedUser) {
-        const err = new Error('Пользователь по id не найден')
-        err.statusCode = NOT_FOUND_ERROR_CODE
+        const err = new NotFoundError('Пользователь по id не найден')
         next(err)
         return
       }
@@ -83,8 +80,7 @@ const patchAvatar = async (req, res, next) => {
     { new: true, runValidators: true },
   )
     .orFail(() => {
-      const err = new Error('Пользователь по id не найден')
-      err.statusCode = NOT_FOUND_ERROR_CODE
+      const err = new NotFoundError('Пользователь по id не найден')
       next(err)
     })
     .then((user) => {
@@ -101,10 +97,9 @@ const login = (req, res, next) => {
   User.findOne({ email })
     .select('+password')
     .orFail(() => {
-      const err = new Error(
+      const err = new UnauthorizedError(
         'Для доступа к защищенным страницам необходимо авторизоваться.',
       )
-      err.statusCode = UNAUTHORIZED_ERROR_CODE
       next(err)
     })
     .then((user) => {
@@ -113,10 +108,9 @@ const login = (req, res, next) => {
     })
     .then((matched) => {
       if (!matched) {
-        const err = new Error(
+        const err = new UnauthorizedError(
           'Для доступа к защищенным страницам необходимо авторизоваться.',
         )
-        err.statusCode = UNAUTHORIZED_ERROR_CODE
         next(err)
         return
       }
@@ -143,14 +137,12 @@ const infoUser = async (req, res, next) => {
     if (user) {
       res.send({ user })
     } else {
-      const err = new Error('Пользователь не найден')
-      err.statusCode = NOT_FOUND_ERROR_CODE
+      const err = new NotFoundError('Пользователь не найден')
       next(err)
     }
   } else {
     // Если идентификатор пользователя отсутствует в куках, вернуть ошибку или пустой объект
-    const err = new Error('Пользователь не аутентифицирован')
-    err.statusCode = UNAUTHORIZED_ERROR_CODE
+    const err = new UnauthorizedError('Пользователь не аутентифицирован')
     next(err)
   }
 }
@@ -164,8 +156,8 @@ const getCurrentUser = async (req, res, next) => {
 
       // Проверяем, существует ли пользователь
       if (!currentUser) {
-        const err = new Error('Пользователь не найден')
-        err.statusCode = NOT_FOUND_ERROR_CODE
+        const err = new NotFoundError('Пользователь не найден')
+        next(err)
       }
 
       // Отправляем информацию о пользователе в ответ

@@ -1,11 +1,11 @@
 const express = require('express')
 const { celebrate, Joi } = require('celebrate')
 
-const { NOT_FOUND_ERROR_CODE } = require('../constants/constants')
 const userRouter = require('./users')
 const cardRouter = require('./cards')
 const { login, createUser } = require('../controllers/users')
 const { auth } = require('../middlewares/auth')
+const NotFoundError = require('../errors/not-found')
 
 const router = express.Router()
 
@@ -33,8 +33,7 @@ router.use('/users', userRouter)
 router.use('/cards', cardRouter)
 
 router.use((req, res, next) => {
-  const err = new Error('Такой страницы не существует')
-  err.statusCode = NOT_FOUND_ERROR_CODE
+  const err = new NotFoundError('Такой страницы не существует')
   next(err)
 })
 

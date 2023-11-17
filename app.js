@@ -1,13 +1,13 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const { errors } = require('celebrate')
-
+const helmet = require('helmet')
+const rateLimit = require('express-rate-limit')
 const cookieParser = require('cookie-parser')
 
 const router = require('./routes/router')
 const {
   CLIENT_ERROR_CODE,
-  NOT_FOUND_ERROR_CODE,
   MONGO_DUPLICATE_ERROR_CODE,
   CONFLICT_ERROR_CODE,
 } = require('./constants/constants')
@@ -15,8 +15,17 @@ const {
 require('dotenv').config() // Подключаем переменные окружения из файла .env
 
 const app = express()
-// const { MONGO_URL } = process.env
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 100, // Максимальное количество запросов за указанный период
+  message: 'Превышен лимит запросов, пожалуйста, подождите некоторое время.',
+})
+
+// Подключаем rate limiter к всем запросам
+app.use(limiter)
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
+// Набор middleware функций для express, который помогает защитить ваше приложение Node.js от уязвимостей и кибератак, включая CSRF, XSS и другие.
+app.use(helmet())
 
 app.use(express.json()) // метод обогащает последующие роуты body
 app.use(cookieParser())
@@ -42,11 +51,7 @@ app.use((error, req, res, next) => {
       .status(CLIENT_ERROR_CODE)
       .send({ message: 'Ошибка валидации полей' })
   }
-  if (error.name === 'NotFound') {
-    return res
-      .status(NOT_FOUND_ERROR_CODE)
-      .send({ message: 'Запрашиваемый ресурс не найден' })
-  }
+
   if (error.name === 'ValidationError') {
     return res
       .status(CLIENT_ERROR_CODE)
@@ -58,11 +63,6 @@ app.use((error, req, res, next) => {
       .send({ message: 'Ошибка валидации полей' })
   }
 
-  if (error.name === 'ValidationError') {
-    return res
-      .status(CLIENT_ERROR_CODE)
-      .send({ message: 'Ошибка валидации полей' })
-  }
   return res.status(statusCode).send({
     // проверяем статус и выставляем сообщение в зависимости от него
     message: statusCode === 500 ? 'На сервере произошла ошибка' : message,
