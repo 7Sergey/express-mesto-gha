@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { default: isEmail } = require('validator/lib/isEmail')
+const Joi = require('joi')
 
 const userSchema = new mongoose.Schema(
   {
@@ -16,12 +17,15 @@ const userSchema = new mongoose.Schema(
       maxlength: 30, // а максимальная — 30 символов
       default: 'Исследователь',
     },
-    avatar: {
-      //  аватар
-      type: String,
-      default:
-        'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
-    },
+    avatar: Joi.string().pattern(
+      /^(https?:\/\/)www\.[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=,]+#?$/,
+    ),
+    // avatar: {
+    //   //  аватар
+    //   type: String,
+    //   default:
+    //     'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    // },
     email: {
       type: String,
       unique: true,

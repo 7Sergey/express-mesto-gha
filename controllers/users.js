@@ -81,7 +81,7 @@ const createUser = async (req, res) => {
   }
 }
 
-const patchUser = async (req, res) => {
+const patchUser = async (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { name: req.body.name, about: req.body.about },
@@ -89,106 +89,74 @@ const patchUser = async (req, res) => {
   )
     .then((updatedUser) => {
       if (!updatedUser) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь по id не найден' })
+        const err = new Error('Пользователь по id не найден')
+        err.statusCode = NOT_FOUND_ERROR_CODE
+        next(err)
       }
       return res.send({ data: updatedUser })
     })
 
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' })
-      }
-      if (error.name === 'CastError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Передан невалидный id' })
-      }
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' })
-    })
+    .catch(next)
 }
 
-const patchAvatar = async (req, res) => {
+const patchAvatar = async (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { avatar: req.body.avatar },
     { new: true, runValidators: true },
   )
     .orFail(() => {
-      throw new Error('NotFound')
+      const err = new Error('Пользователь по id не найден')
+      err.statusCode = NOT_FOUND_ERROR_CODE
+      next(err)
     })
     .then((user) => {
       res.send({ data: user })
     })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' })
-      }
-      if (error.message === 'NotFound') {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь по id не найден' })
-      }
-      if (error.name === 'ValidationError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' })
-      }
-      if (error.name === 'CastError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Передан невалидный id' })
-      }
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Ошибка на стороне сервера' })
-    })
+    .catch(next)
 }
 
-const login = async (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body
 
-  try {
-    const user = await User.findOne({ email })
-      .select('+password')
-      .orFail(() => new Error('NotAuthenticate'))
-    // сравниваем пароли
-    const mathed = await bcrypt.compare(String(password), user.password)
-    //  выбрасываем новую ошибку, если не совпадают
-    if (!mathed) {
-      throw new Error('NotAuthenticate')
-    }
-    const token = generateToken({ _id: user._id })
-    res.cookie('userToken', token, {
-      httpOnly: true,
-      sameSite: true,
-      // срок действия токена 1 неделя
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+  let foundUser // Объявляем переменную здесь, чтобы она была видна в обоих блоках .then
+
+  User.findOne({ email })
+    .select('+password')
+    .orFail(() => {
+      const err = new Error(
+        'Для доступа к защищенным страницам необходимо авторизоваться.',
+      )
+      err.statusCode = UNAUTHORIZED_ERROR_CODE
+      next(err)
     })
-    return res.send({ email: user.email })
-  } catch (error) {
-    if (error.message === 'NotAuthenticate') {
-      return res.status(UNAUTHORIZED_ERROR_CODE).send({
-        message:
+    .then((user) => {
+      foundUser = user
+      return bcrypt.compare(String(password), user.password)
+    })
+    .then((matched) => {
+      if (!matched) {
+        const err = new Error(
           'Для доступа к защищенным страницам необходимо авторизоваться.',
+        )
+        err.statusCode = UNAUTHORIZED_ERROR_CODE
+        next(err)
+      }
+
+      const token = generateToken({ _id: foundUser._id })
+      res.cookie('userToken', token, {
+        httpOnly: true,
+        sameSite: true,
+        // срок действия токена 1 неделя
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       })
-    }
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: 'Ошибка на стороне сервера' })
-  }
+      return res.send({ email: foundUser.email })
+    })
+    .catch(next)
 }
 
-const infoUser = async (req, res) => {
+const infoUser = async (req, res, next) => {
   const userIdFromCookie = req.cookies
-  console.log(req.cookies)
   if (userIdFromCookie) {
     // Здесь вы можете использовать userId для получения информации о текущем пользователе из вашей базы данных или другого источника
     // Пример: извлечение информации о пользователе из базы данных
@@ -197,15 +165,19 @@ const infoUser = async (req, res) => {
     if (user) {
       res.send({ user })
     } else {
-      res.status(404).json({ error: 'Пользователь не найден' })
+      const err = new Error('Пользователь не найден')
+      err.statusCode = NOT_FOUND_ERROR_CODE
+      next(err)
     }
   } else {
     // Если идентификатор пользователя отсутствует в куках, вернуть ошибку или пустой объект
-    res.status(401).json({ error: 'Пользователь не аутентифицирован' })
+    const err = new Error('Пользователь не аутентифицирован')
+    err.statusCode = UNAUTHORIZED_ERROR_CODE
+    next(err)
   }
 }
 
-const getCurrentUser = async (req, res) => {
+const getCurrentUser = async (req, res, next) => {
   try {
     // Вызываем middleware аутентификации
     authMiddleware.auth(req, res, async () => {
@@ -214,22 +186,20 @@ const getCurrentUser = async (req, res) => {
 
       // Проверяем, существует ли пользователь
       if (!currentUser) {
-        return res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: 'Пользователь не найден' })
+        const err = new Error('Пользователь не найден')
+        err.statusCode = NOT_FOUND_ERROR_CODE
       }
 
       // Отправляем информацию о пользователе в ответ
       return res.send(currentUser)
     })
   } catch (error) {
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: 'Ошибка на стороне сервера' })
+    next(error)
   }
   // Добавляем возврат для устранения ошибки eslintconsistent-return
   return null
 }
+
 module.exports = {
   getUsers,
   getUserById,

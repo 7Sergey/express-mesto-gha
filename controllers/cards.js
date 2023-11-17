@@ -1,87 +1,59 @@
 const {
   NOT_FOUND_ERROR_CODE,
-  CLIENT_ERROR_CODE,
-  SERVER_ERROR_CODE,
   UNAUTHORIZED_ERROR_CODE,
 } = require('../constants/constants')
 
 const Card = require('../models/Card')
 
-const getCards = async (req, res) => {
+const getCards = async (req, res, next) => {
   Card.find({})
     .then((cards) => {
       res.send(cards)
     })
-    .catch(() => {
-      res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Произошла ошибка на сервере' })
-    })
+    .catch(next)
 }
 
-const createCard = async (req, res) => {
+const createCard = async (req, res, next) => {
   const { name, link } = req.body
   const owner = req.user._id
   Card.create({ name, link, owner })
     .then((card) => {
       res.send({ data: card })
     })
-    .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Ошибка валидации полей' })
-      }
-      return res
-        .status(SERVER_ERROR_CODE)
-        .send({ message: 'Произошла ошибка на сервере' })
-    })
+    .catch(next)
 }
 
-const deleteCard = async (req, res) => {
+const deleteCard = (req, res, next) => {
   const { idCard } = req.params
 
-  try {
-    const card = await Card.findById(idCard)
-
-    if (!card) {
-      return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: 'Карта не найдена' })
-    }
-
-    // Проверяем, является ли текущий пользователь создателем карточки
-    if (card.owner.toString() !== req.user._id) {
-      return res
-        .status(UNAUTHORIZED_ERROR_CODE)
-        .send({ message: 'Нет прав для удаления этой карточки' })
-    }
-
-    // Если пользователь - создатель, то удаляем карточку
-    const deletedCard = await Card.findByIdAndRemove(idCard)
-
-    if (!deletedCard) {
-      return res
-        .status(NOT_FOUND_ERROR_CODE)
-        .send({ message: 'Карта не найдена' })
-    }
-
-    return res.send({ data: deletedCard })
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res
-        .status(CLIENT_ERROR_CODE)
-        .send({ message: 'Ошибка валидации полей' })
-    }
-
-    return res
-      .status(SERVER_ERROR_CODE)
-      .send({ message: 'Произошла ошибка на сервере' })
-  }
+  Card.findById(idCard)
+    .then((card) => {
+      if (!card) {
+        const err = new Error('Карта не найдена')
+        err.statusCode = NOT_FOUND_ERROR_CODE
+        next(err)
+      }
+      // Проверяем, является ли текущий пользователь создателем карточки
+      if (card.owner.toString() !== req.user._id) {
+        const err = new Error('Нет прав для удаления этой карточки')
+        err.statusCode = UNAUTHORIZED_ERROR_CODE
+        next(err)
+      }
+      // Если пользователь - создатель, то удаляем карточку
+      return Card.findByIdAndRemove(idCard)
+    })
+    .then((deletedCard) => {
+      if (!deletedCard) {
+        const err = new Error('Карта не найдена')
+        err.statusCode = NOT_FOUND_ERROR_CODE
+        next(err)
+      }
+      return res.send({ data: deletedCard })
+    })
+    .catch(next)
 }
 
-const likeCard = async (req, res) => {
-  console.log('req.user:', req.user)
+const likeCard = async (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.idCard,
     { $addToSet: { likes: req.user._id } },
@@ -89,25 +61,17 @@ const likeCard = async (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карта не найдена' })
+        const err = new Error('Карта не найдена')
+        err.statusCode = NOT_FOUND_ERROR_CODE
+        next(err)
       } else {
         res.send({ data: card })
       }
     })
-    .catch((error) => {
-      if (error.name === 'CastError') {
-        res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Некорректный формат ID' })
-      } else {
-        res
-          .status(SERVER_ERROR_CODE)
-          .send({ message: 'Произошла ошибка на сервере' })
-      }
-    })
+    .catch(next)
 }
 
-const dislikeCard = async (req, res) => {
+const dislikeCard = async (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.idCard,
     { $pull: { likes: req.user._id } },
@@ -115,22 +79,14 @@ const dislikeCard = async (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карта не найдена' })
+        const err = new Error('Карта не найдена')
+        err.statusCode = NOT_FOUND_ERROR_CODE
+        next(err)
       } else {
         res.send({ data: card })
       }
     })
-    .catch((error) => {
-      if (error.name === 'CastError') {
-        res
-          .status(CLIENT_ERROR_CODE)
-          .send({ message: 'Некорректный формат ID' })
-      } else {
-        res
-          .status(SERVER_ERROR_CODE)
-          .send({ message: 'Произошла ошибка на сервере' })
-      }
-    })
+    .catch(next)
 }
 
 module.exports = {

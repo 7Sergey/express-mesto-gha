@@ -5,6 +5,10 @@ const { errors } = require('celebrate')
 const cookieParser = require('cookie-parser')
 
 const router = require('./routes/router')
+const {
+  CLIENT_ERROR_CODE,
+  NOT_FOUND_ERROR_CODE,
+} = require('./constants/constants')
 
 require('dotenv').config() // Подключаем переменные окружения из файла .env
 
@@ -18,6 +22,34 @@ app.use(router)
 
 app.use(errors()) // обработчик ошибок celebrate
 
+// Централизованный обработчик ошибок
+// игнорируем ошибку eslint о неиспользованном аргументе
+// eslint-disable-next-line no-unused-vars
+app.use((error, req, res, next) => {
+  // если у ошибки нет статуса, выставляем 500
+  const { statusCode = 500, message } = error
+  // проверка на ошибки
+  if (error.name === 'CastError') {
+    return res
+      .status(CLIENT_ERROR_CODE)
+      .send({ message: 'Ошибка валидации полей' })
+  }
+  if (error.name === 'NotFound') {
+    return res
+      .status(NOT_FOUND_ERROR_CODE)
+      .send({ message: 'Запрашиваемый ресурс не найден' })
+  }
+
+  if (error.name === 'ValidationError') {
+    return res
+      .status(CLIENT_ERROR_CODE)
+      .send({ message: 'Ошибка валидации полей' })
+  }
+  return res.status(statusCode).send({
+    // проверяем статус и выставляем сообщение в зависимости от него
+    message: statusCode === 500 ? 'На сервере произошла ошибка' : message,
+  })
+})
 app.listen(3000, () => {
   console.log('Сервер запущен')
 })
