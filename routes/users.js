@@ -19,7 +19,7 @@ userRouter.patch(
       name: Joi.string().required().min(2).max(30),
       about: Joi.string().required().min(2).max(30),
       avatar: Joi.string().pattern(
-        /^(https?:\/\/)www\.[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=,]+#?$/,
+        /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
       ),
     }),
   }),
@@ -30,7 +30,7 @@ userRouter.patch(
   celebrate({
     body: Joi.object().keys({
       avatar: Joi.string().pattern(
-        /^(https?:\/\/)www\.[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=,]+#?$/,
+        /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
       ),
     }),
   }),

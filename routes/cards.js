@@ -1,5 +1,5 @@
 const express = require('express')
-const { celebrate, Joi } = require('celebrate')
+const { celebrate, Joi, Segments } = require('celebrate')
 
 const {
   getCards,
@@ -24,8 +24,32 @@ cardRouter.post(
   }),
   createCard,
 )
-cardRouter.delete('/:idCard', deleteCard)
-cardRouter.put('/:idCard/likes', likeCard)
-cardRouter.delete('/:idCard/likes', dislikeCard)
+cardRouter.delete(
+  '/:idCard',
+  celebrate({
+    [Segments.PARAMS]: {
+      idCard: Joi.string().alphanum().length(24).required(),
+    },
+  }),
+  deleteCard,
+)
+cardRouter.put(
+  '/:idCard/likes',
+  celebrate({
+    [Segments.PARAMS]: {
+      idCard: Joi.string().alphanum().length(24).required(),
+    },
+  }),
+  likeCard,
+)
+cardRouter.delete(
+  '/:idCard/likes',
+  celebrate({
+    [Segments.PARAMS]: {
+      idCard: Joi.string().alphanum().length(24).required(),
+    },
+  }),
+  dislikeCard,
+)
 
 module.exports = cardRouter

@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken') // импортируем модуль jsonwebtoken
+const UnauthorizedError = require('../errors/unauthorized')
 
 const { SECRET_KEY, NODE_ENV } = process.env
 
@@ -8,7 +9,7 @@ function auth(req, res, next) {
     const token = req.cookies.userToken
 
     if (!token) {
-      throw new Error('NotAuthenticate')
+      throw new UnauthorizedError('NotAuthenticate')
     }
     const validTocken = token.replace('Bearer ', '')
     payload = jwt.verify(validTocken, NODE_ENV ? SECRET_KEY : 'dev_secret')

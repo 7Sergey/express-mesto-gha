@@ -1,5 +1,5 @@
+const Forbidden = require('../errors/forbidden')
 const NotFoundError = require('../errors/not-found')
-const UnauthorizedError = require('../errors/unauthorized')
 
 const Card = require('../models/Card')
 
@@ -33,15 +33,12 @@ const deleteCard = (req, res, next) => {
       }
       // Проверяем, является ли текущий пользователь создателем карточки
       if (card.owner.toString() !== req.user._id) {
-        const err = new UnauthorizedError('Нет прав для удаления этой карточки')
+        const err = new Forbidden('Нет прав для удаления этой карточки')
         next(err)
         return
       }
       // Если пользователь - создатель, то удаляем карточку
-      Card.deleteOne(card)
-    })
-    .then((card) => {
-      res.send({ data: card })
+      Card.deleteOne(card).then(() => res.send({ data: card }))
     })
     .catch(next)
 }
