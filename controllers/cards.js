@@ -1,6 +1,5 @@
 const Forbidden = require('../errors/forbidden')
 const NotFoundError = require('../errors/not-found')
-
 const Card = require('../models/Card')
 
 const getCards = async (req, res, next) => {
