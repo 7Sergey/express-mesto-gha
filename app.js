@@ -31,7 +31,7 @@ app.use(express.json()) // метод обогащает последующие 
 app.use(cookieParser())
 app.use(router)
 
-app.use(errors()) // обработчик ошибок celebrate
+app.use(errors()) // обработчик ошибок Celebrate
 
 // Централизованный обработчик ошибок
 // игнорируем ошибку eslint о неиспользованном аргументе
