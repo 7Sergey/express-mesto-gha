@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs') // импортируем bcrypt
 const User = require('../models/User')
-const authMiddleware = require('../middlewares/auth')
 
 const { SALT_ROUNDS } = require('../constants/constants')
 const { generateToken } = require('../utils/jwt')
@@ -128,41 +127,30 @@ const login = (req, res, next) => {
 }
 
 const infoUser = async (req, res, next) => {
-  const userIdFromCookie = req.cookies
-  if (userIdFromCookie) {
-    // Здесь вы можете использовать userId для получения информации о текущем пользователе из вашей базы данных или другого источника
-    // Пример: извлечение информации о пользователе из базы данных
-    const user = User.findOne({ id: req.cookies })
+  // Здесь вы можете использовать userId для получения информации о текущем пользователе из вашей базы данных или другого источника
+  // Пример: извлечение информации о пользователе из базы данных
+  const user = User.findOne({ id: req.cookies })
 
-    if (user) {
-      res.send({ user })
-    } else {
-      const err = new NotFoundError('Пользователь не найден')
-      next(err)
-    }
+  if (user) {
+    res.send({ user })
   } else {
-    // Если идентификатор пользователя отсутствует в куках, вернуть ошибку или пустой объект
-    const err = new UnauthorizedError('Пользователь не аутентифицирован')
+    const err = new NotFoundError('Пользователь не найден')
     next(err)
   }
 }
 
 const getCurrentUser = async (req, res, next) => {
   try {
-    // Вызываем middleware аутентификации
-    authMiddleware.auth(req, res, async () => {
-      // Если аутентификация прошла успешно, продолжаем с обработкой запроса
-      const currentUser = await User.findById(req.user._id)
+    const currentUser = await User.findById(req.user._id)
 
-      // Проверяем, существует ли пользователь
-      if (!currentUser) {
-        const err = new NotFoundError('Пользователь не найден')
-        next(err)
-      }
+    // Проверяем, существует ли пользователь
+    if (!currentUser) {
+      const err = new NotFoundError('Пользователь не найден')
+      next(err)
+    }
 
-      // Отправляем информацию о пользователе в ответ
-      return res.send(currentUser)
-    })
+    // Отправляем информацию о пользователе в ответ
+    return res.send(currentUser)
   } catch (error) {
     next(error)
   }

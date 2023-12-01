@@ -5,7 +5,9 @@ const helmet = require('helmet')
 const rateLimit = require('express-rate-limit')
 const cookieParser = require('cookie-parser')
 
+const { requestLogger, errorLogger } = require('./middlewares/logger')
 const router = require('./routes/router')
+
 const {
   CLIENT_ERROR_CODE,
   MONGO_DUPLICATE_ERROR_CODE,
@@ -24,12 +26,16 @@ const limiter = rateLimit({
 // Подключаем rate limiter к всем запросам
 app.use(limiter)
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
+
+app.use(requestLogger) // подключаем логгер запросов
+
 // Набор middleware функций для express, который помогает защитить ваше приложение Node.js от уязвимостей и кибератак, включая CSRF, XSS и другие.
 app.use(helmet())
 
 app.use(express.json()) // метод обогащает последующие роуты body
 app.use(cookieParser())
 app.use(router)
+app.use(errorLogger) // подключаем логгер ошибок
 
 app.use(errors()) // обработчик ошибок Celebrate
 
@@ -52,11 +58,6 @@ app.use((error, req, res, next) => {
       .send({ message: 'Ошибка валидации полей' })
   }
 
-  if (error.name === 'ValidationError') {
-    return res
-      .status(CLIENT_ERROR_CODE)
-      .send({ message: 'Ошибка валидации полей' })
-  }
   if (error.name === 'ValidationError') {
     return res
       .status(CLIENT_ERROR_CODE)

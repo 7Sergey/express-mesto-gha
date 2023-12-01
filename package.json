@@ -7,6 +7,7 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "lint": "npx eslint ."
+
   },
   "keywords": [],
   "author": "Sergey",
@@ -18,13 +19,15 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.4",
+    "express-winston": "^4.2.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^6.7.5",
-    "validator": "^13.11.0"
+    "mongoose": "^6.12.3",
+    "validator": "^13.11.0",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
-    "eslint": "^8.53.0",
+    "eslint": "^8.54.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.29.0",

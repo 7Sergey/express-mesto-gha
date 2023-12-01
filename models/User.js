@@ -17,17 +17,29 @@ const userSchema = new mongoose.Schema(
       default: 'Исследователь',
     },
 
+    // avatar: {
+    //   //  аватар
+    //   type: String,
+    //   default:
+    //     'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    // },
+
     avatar: {
-      //  аватар
       type: String,
       default:
         'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+      validate: {
+        validator: (v) => {
+          const urlRegex = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i
+          return urlRegex.test(v)
+        },
+        message: 'Некорректный формат URL для аватара',
+      },
     },
     email: {
       type: String,
       unique: true,
       required: true,
-      minlength: 8,
       // валидация поля email
       validate: {
         validator: (v) => isEmail(v),

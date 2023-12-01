@@ -22,26 +22,26 @@ const createCard = async (req, res, next) => {
 
 const deleteCard = (req, res, next) => {
   const { idCard } = req.params
-
   Card.findById(idCard)
     .then((card) => {
       if (!card) {
         const err = new NotFoundError('Карта не найдена')
         next(err)
-        return
       }
+
       // Проверяем, является ли текущий пользователь создателем карточки
       if (card.owner.toString() !== req.user._id) {
         const err = new Forbidden('Нет прав для удаления этой карточки')
         next(err)
-        return
       }
+
       // Если пользователь - создатель, то удаляем карточку
-      Card.deleteOne(card).then(() => res.send({ data: card }))
+      return Card.deleteOne(card).then(() => {
+        res.send({ data: card })
+      })
     })
     .catch(next)
 }
-
 const likeCard = async (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.idCard,
